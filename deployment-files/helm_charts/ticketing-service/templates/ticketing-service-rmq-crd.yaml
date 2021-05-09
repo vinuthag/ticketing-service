@@ -1,0 +1,12 @@
+{{- if .Values.rmq.enabled }}
+apiVersion: ees.ge.com/v1
+kind: {{ .Values.rmq.crd }}
+metadata:
+    name: {{ .Values.rmq.name }}
+    namespace: {{ .Values.rmq.namespace }}
+spec:
+    clientid:  {{ .Values.rmq.name }}
+    clientns: {{ .Values.rmq.namespace }}
+    username: {{ .Values.rmq.username }}
+    vhostname: {{ .Values.rmq.vhostname | quote}}
+{{- end -}}

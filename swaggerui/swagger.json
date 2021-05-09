@@ -1,0 +1,260 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Ticketing Application",
+    "version": "1.0.0",
+    "title": "Ticketing Application"
+  },
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Ticket Booking Application",
+      "description": "APIs for Ticketing Booking Application"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/tickets": {
+      "post": {
+        "tags": [
+          "Ticket"
+        ],
+        "summary": "Book tickets",
+        "description": "Reserve tickets for users",
+        "operationId": "BookTicket",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Reservation Details",
+            "in": "body",
+            "description": "Reservation Details request payload",
+            "schema": {
+              "$ref": "#/definitions/Ticket"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful reservation",
+            "schema": {
+              "$ref": "#/definitions/ReservedTickets"
+            }
+          },
+          "400": {
+            "description": "Bad Request invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "405": {
+            "description": "Invalid input"
+          },
+          "500": {
+            "description": "Failed to reserve ticket"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ticket"
+        ],
+        "summary": "Cancel ticket",
+        "description": "Cancellation of reservation",
+        "operationId": "CancelTicket",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Reserved ticket numbers",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ReservedTickets"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancellation of booking successful"
+          },
+          "400": {
+            "description": "Bad Request. Invalid input details."
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Failed to cancel the reservation"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Ticket"
+        ],
+        "summary": "Update the reservation",
+        "description": "Update reservation based on ticket id",
+        "operationId": "UpdateReservation",
+        "parameters": [
+          {
+            "name": "Ticket",
+            "in": "body",
+            "required": true,
+            "description": "Ticket json request payload",
+            "schema": {
+              "$ref": "#/definitions/UpdateTickets"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully updated reservation"
+          },
+          "400": {
+            "description": "Invalid reservation details",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Failed to update reservation details",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Ticket": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "example@gmail.com"
+          },
+          "name": {
+            "type": "string",
+            "example": "test"
+          },
+          "to": {
+            "type": "string",
+            "example": "Banglore"
+          },
+          "from": {
+            "type": "string",
+            "example": "Chennai"
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{3}-\\d{2}-\\d{4}$",
+            "example": "2-5-2021"
+          },
+          "time": {
+            "type": "string",
+            "example": "2am"
+          }
+        }
+      }
+    },
+    "UpdateTickets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ticket_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "to": {
+            "type": "string",
+            "example": "Banglore"
+          },
+          "from": {
+            "type": "string",
+            "example": "Chennai"
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{3}-\\d{2}-\\d{4}$",
+            "example": "2-5-2021"
+          },
+          "time": {
+            "type": "string",
+            "example": "2am"
+          }
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "errorCode": {
+          "type": "integer",
+          "example": "50001"
+        },
+        "errorMessage": {
+          "type": "string",
+          "example": "Invalid ticket id"
+        }
+      }
+    },
+    "ReservedTickets": {
+      "type": "object",
+      "properties": {
+        "reservedTickets": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "BasicAuth": {
+      "type": "basic"
+    }
+  }
+}

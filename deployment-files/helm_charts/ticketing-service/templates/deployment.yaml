@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ticketing-service.fullname" . }}
+  namespace: {{ default "edison-system" .Release.Namespace }}
+  labels:
+    {{- include "ticketing-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ticketing-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ticketing-service.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- if .Values.securityContext.enable }}
+      securityContext:
+          runAsUser: {{ .Values.securityContext.runAsUser }}
+          runAsGroup: {{ .Values.securityContext.runAsGroup }}    
+    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository}}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+          {{- if eq .Values.postgres.enabled false }}
+            - name: sqlitedb
+              mountPath: {{ .Values.persistence.sqliteMountPath }}
+          {{- end }}
+          {{- if .Values.rmq.enabled }}
+            - name: pref-service-secret
+              mountPath: {{ .Values.rmq.mountPath }}
+          {{- end }}
+          {{- if .Values.postgres.enabled }}
+            - name: pref-service-postgres-secret
+              mountPath: {{ .Values.postgres.mountPath }}
+          {{- end }}
+          env:
+        {{- if .Values.postgres.enabled }}
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.reservationdb.secret_name }}
+                key: {{ .Values.postgres.dbuser_key }}
+          - name: DB_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.reservationdb.configmap }}
+                key: {{ .Values.postgres.dbname_key }}
+          - name: HOST
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.reservationdb.configmap }}
+                key: {{ .Values.postgres.service_host_key }}
+          - name: DB_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.reservationdb.configmap }}
+                key: {{ .Values.postgres.service_port_key }}
+          - name: DB_CONNECTION_TIMEOUT_SECOND
+            value: {{ default "1" .Values.env.DB_CONNECTION_TIMEOUT_SECOND | quote }}
+        {{- end }}
+        {{- if .Values.rmq.enabled }}
+          - name: RMQ_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.rmq.configmap }}
+                key: rabbitmq-service-host
+          - name: RMQ_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.rmq.configmap }}
+                key: rabbitmq-service-port    
+          - name: RMQ_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.rmq.secret }}
+                key: rabbitmq-user
+          - name: RMQ_RETRY_DELAY_MILLISEC
+            value: {{ default "50" .Values.env.RMQ_RETRY_DELAY_MILLISEC | quote }}
+          - name: RMQ_RETRY_MAX_ATTEMPTS
+            value: {{ default "3" .Values.env.RMQ_RETRY_MAX_ATTEMPTS | quote }}
+          - name: RMQ_CONNECTION_TIME_OUT_MS
+            value: {{ default "50" .Values.env.RMQ_CONNECTION_TIME_OUT_MS | quote }}
+          - name: RMQ_VHOST
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Values.rmq.configmap }}
+                key: rabbitmq-service-vhost  
+        {{- end }}
+          - name: IS_RMQ_ENABLED
+            value: {{ .Values.rmq.enabled | quote }}
+          - name: IS_POSTGRES_ENABLED
+            value: {{ .Values.postgres.enabled | quote }}
+          - name: SQLITE_MOUNT_PATH
+            value: {{ .Values.persistence.sqliteMountPath | quote }}
+        {{- if .Values.rmq.enabled }}
+          - name: RMQ_SECRET_PATH
+            value: {{ .Values.rmq.mountPath }}/{{ .Values.rmq.secretPath}}
+        {{- end }}
+        {{- if .Values.postgres.enabled }}
+          - name: POSTGRES_SECRET_PATH
+            value: {{ .Values.postgres.mountPath }}/{{ .Values.postgres.secretPath}}
+        {{- end }}
+      volumes:
+    {{- if eq .Values.postgres.enabled false }}
+      - name: sqlitedb
+    {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistence.existingClaim | default (include "ticketing-service.fullname" .) }}
+    {{- else }}
+          emptyDir: {}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.rmq.enabled }}
+      - name: pref-service-secret
+        secret:
+          secretName: {{ .Values.rmq.secret }}
+          defaultMode: 0400
+          items:
+          - key: rabbitmq-password
+            path: {{ default "/secret/.rabbitmq" .Values.rmq.secretPath }}
+    {{- end }}
+    {{- if .Values.postgres.enabled }}
+      - name: pref-service-postgres-secret
+        secret:
+          secretName: {{ .Values.reservationdb.secret_name }}
+          defaultMode: 0400
+          items:
+          - key: password
+            path: {{ default "/secret/.postgres" .Values.postgres.secretPath }}
+    {{- end }}
