@@ -2,10 +2,7 @@
 # STEP 1 build executable binary
 ############################
 FROM golang:1.14-alpine3.12 AS builder
-RUN export http_proxy=http://proxy-privzen.jfwtc.ge.com:80 && \
-	export https_proxy=http://proxy-privzen.jfwtc.ge.com:80 && \
-    apk update && apk add --no-cache git && \
-    unset http_proxy https_proxy && \
+RUN apk update && apk add --no-cache git && \
     touch /etc/environment
 ENV GO111MODULE=on
 WORKDIR $GOPATH/src/ticketing-service
@@ -19,10 +16,7 @@ RUN go build -o /go/bin/ticketing-service
 ############################
 FROM alpine:3.12.0
 
-RUN export http_proxy=http://proxy-privzen.jfwtc.ge.com:80 && \
-        export https_proxy=http://proxy-privzen.jfwtc.ge.com:80 && \
-    unset http_proxy https_proxy && \
-    touch /etc/environment && \
+RUN touch /etc/environment && \
     mkdir -p /swaggerui
 
 COPY --from=builder /go/bin/ticketing-service /go/bin/ticketing-service

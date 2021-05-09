@@ -8,7 +8,7 @@ image:
   repository: ticketing-service
   tag: latest
   pullPolicy: IfNotPresent
-  postgres_repository_base: hc-eu-west-aws-artifactory.cloud.health.ge.com/docker-eml-snapshot/postgres:13.2-alpine
+  postgres_repository_base: postgres:13.2-alpine
 
 imagePullSecrets: []
 nameOverride: ""
